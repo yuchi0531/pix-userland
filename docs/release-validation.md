@@ -108,7 +108,7 @@ cat "$LOG/termux-usb-map.json"
 python3 -c 'import json,sys; [print(p) for p in json.load(open(sys.argv[1]))["selected"]]' "$LOG/termux-usb-map.json" > "$LOG/termux-usb-selected-paths.txt"
 ```
 
-PIXはsingle-device runで`TARGET_USB=06b8:102b`（DT181-PU0）または`06b8:103b`（DT295）、`EXPECTED_NODES=1`とする。T12の2-device runは同じ対象VID:PIDを選び`EXPECTED_NODES=2`にする。
+PIXはsingle-device runで`TARGET_USB=06b8:102a`または`06b8:102b`（DT181-PU0）または`06b8:103b`（DT295）、`EXPECTED_NODES=1`とする。T12の2-device runは同じ対象VID:PIDを選び`EXPECTED_NODES=2`にする。
 
 結果が期待数と完全一致した場合だけ、JSONの`selected`に記録された各pathへ`termux-usb -r <path>`（または製品固有の`-r -e`）を実行する。USB permission後にdaemonを開始する。再接続時は古いpath/FDを使わず、同じ列挙・sysfs照合を再実行する。sysfs未読・node未対応・無許可候補複数は合格ではなく未達として記録する。
 
@@ -951,8 +951,8 @@ set -e
 RUN_ID='rc-20261026-e05'; RT="$PREFIX/tmp/pix-${RUN_ID}"; LOG="$PREFIX/tmp/pix-${RUN_ID}-log"
 mkdir -p "$LOG"; chmod 700 "$LOG"
 termux-usb -l > "$LOG/termux-usb-paths.json" || exit $?
-if [ -z "${TARGET_USB:-}" ]; then echo 'set TARGET_USB=06b8:102b for DT181-PU0 or 06b8:103b for DT295' >&2; exit 2; fi
-case "$TARGET_USB" in 06b8:102b|06b8:103b) ;; *) echo 'TARGET_USB must match DT181-PU0 or DT295' >&2; exit 2 ;; esac
+if [ -z "${TARGET_USB:-}" ]; then echo 'set TARGET_USB=06b8:102a or 06b8:102b for DT181-PU0, or 06b8:103b for DT295' >&2; exit 2; fi
+case "$TARGET_USB" in 06b8:102a|06b8:102b|06b8:103b) ;; *) echo 'TARGET_USB must match DT181-PU0 or DT295' >&2; exit 2 ;; esac
 EXPECTED_NODES='1'
 SYSFS_ROOT=${SYSFS_ROOT:-/sys/bus/usb/devices}
 python3 - "$LOG/termux-usb-paths.json" "$TARGET_USB" "$EXPECTED_NODES" "$LOG/termux-usb-map.json" "$SYSFS_ROOT" <<'PY' || exit $?
@@ -1046,7 +1046,7 @@ mkdir -p "$LOG"; chmod 700 "$LOG"
 termux-usb -l > "$LOG/termux-usb-paths.json" || exit $?
 # 上記のsysfs照合を再実行し、再接続後の新しい実nodeだけを選ぶ。
 if [ -z "${TARGET_USB:-}" ]; then echo 'set TARGET_USB for the model under test before reconnecting' >&2; exit 2; fi
-case "$TARGET_USB" in 06b8:102b|06b8:103b) ;; *) echo 'TARGET_USB must match DT181-PU0 or DT295' >&2; exit 2 ;; esac
+case "$TARGET_USB" in 06b8:102a|06b8:102b|06b8:103b) ;; *) echo 'TARGET_USB must match DT181-PU0 or DT295' >&2; exit 2 ;; esac
 EXPECTED_NODES='1'
 SYSFS_ROOT=${SYSFS_ROOT:-/sys/bus/usb/devices}
 python3 - "$LOG/termux-usb-paths.json" "$TARGET_USB" "$EXPECTED_NODES" "$LOG/termux-usb-map.json" "$SYSFS_ROOT" <<'PY' || exit $?

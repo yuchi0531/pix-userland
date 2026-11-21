@@ -122,7 +122,7 @@ Apple Silicon / macOS 26.6.2 arm64、sudoなし。従来のPython版とは別の
 | Linux x86_64 glibc | Latitude-5300でビルド/テスト、BS実データ検査 | glibc版での受信は未検証 |
 | Linux x86_64 musl | Alpine 3.22で完全静的ビルド/テスト、Latitude上でBS実データ検査 | v0.1.2 Releaseで3波各10分、v0.1.3採用コードで25ch・5時間2回確認済み |
 | Android aarch64 Bionic | NDK r27d / API 24でクロスビルド、ELF検査 | 未検証 |
-| udev | 06b8:102b限定の権限ルールを用意 | 新ルール適用の実機試験は未実施 |
+| udev | 06b8:102a/102b限定の権限ルールを用意 | 新ルール適用の実機試験は未実施 |
 | BusyBox mdev | Alpineコンテナ内の模擬sysfs/devで対象限定の権限変更を検査 | 実機ホットプラグは未検証 |
 | Linux aarch64 musl | CIネイティブビルド/単体テスト/ELF依存検査 | 未検証 |
 | Android armv7a / x86_64 | CIクロスビルド/ELF依存検査 | 未検証 |

@@ -654,9 +654,30 @@ static void failure_tests(void) {
     }
     bulk_result = short_write = 0;
 }
+static void captured_list_json(int model, char *text, size_t size) {
+    FILE *capture = tmpfile(); assert(capture);
+    fflush(stdout);
+    int saved_stdout = dup(STDOUT_FILENO); assert(saved_stdout >= 0);
+    assert(dup2(fileno(capture), STDOUT_FILENO) >= 0);
+    assert(!usb_list_model(1, model));
+    fflush(stdout);
+    assert(dup2(saved_stdout, STDOUT_FILENO) >= 0); close(saved_stdout);
+    rewind(capture); size_t n = fread(text, 1, size - 1, capture);
+    assert(n < size - 1); text[n] = 0; fclose(capture);
+}
 static void dt295_model_selection(void) {
     usb_selector selector; assert(!usb_selector_parse("0", &selector));
     usb_backend *b = NULL;
+    /* Some PIX-DT181-PU0 units report 06b8:102a instead of 06b8:102b. Both
+     * PIDs select the DT181 backend, and the listing preserves the real PID. */
+    descriptor_product = 0x102a;
+    assert(!usb_open(&b, &selector, -1, 0));
+    assert(usb_model(b) == USB_MODEL_DT181);
+    usb_close(b);
+    char alias_text[4096];
+    captured_list_json(USB_MODEL_DT181, alias_text, sizeof(alias_text));
+    assert(strstr(alias_text, "\"usb\":\"06b8:102a\""));
+    assert(strstr(alias_text, "\"model\":\"PIX-DT181-PU0\""));
     descriptor_product = 0x103b;
     assert(usb_open(&b, &selector, -1, 0) == 3 && !b);
     config_value = 0;

@@ -23,6 +23,7 @@ enum class Model : std::uint8_t { dt181 = 0U, dt295 = 1U };
 
 struct LocatedDevice final {
     Model model = Model::dt181;
+    std::uint16_t pid = 0U;
     int fd = -1;
     usb_selector selector{};
     std::uint8_t bus = 0U;

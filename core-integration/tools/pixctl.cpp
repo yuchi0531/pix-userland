@@ -29,7 +29,8 @@ bool matches_pix_serial(const wire::ListResponse& list,
         return false;
     const wire::UsbFunction& function = list.functions.items[0U];
     if (function.vid != 0x06b8U ||
-        (function.pid != 0x102bU && function.pid != 0x103bU)) return false;
+        (function.pid != 0x102aU && function.pid != 0x102bU &&
+         function.pid != 0x103bU)) return false;
     const auto& serial = observed.serial;
     return serial.value.length == expected.serial.length &&
            std::memcmp(serial.value.bytes.data(), expected.serial.bytes.data(),

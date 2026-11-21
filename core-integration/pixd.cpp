@@ -213,6 +213,7 @@ bool parse(int argc, char** argv, Arguments& out, bool& help, bool& version,
 int write_models()
 {
     static constexpr char text[] =
+        "PIX-DT181-PU0 06b8:102a\n"
         "PIX-DT181-PU0 06b8:102b\n"
         "PIX-DT295 06b8:103b\n";
     return std::fwrite(text, 1U, sizeof(text) - 1U, stdout) == sizeof(text) - 1U &&
@@ -263,8 +264,9 @@ int write_discovery_json()
         libusb_device_descriptor desc{};
         if (libusb_get_device_descriptor(usb, &desc) != LIBUSB_SUCCESS) continue;
         if (desc.idVendor != 0x06b8U ||
-            (desc.idProduct != 0x102bU && desc.idProduct != 0x103bU)) continue;
-        const bool dt181 = desc.idProduct == 0x102bU;
+            (desc.idProduct != 0x102aU && desc.idProduct != 0x102bU &&
+             desc.idProduct != 0x103bU)) continue;
+        const bool dt181 = desc.idProduct == 0x102aU || desc.idProduct == 0x102bU;
         const char* model = dt181 ? "PIX-DT181-PU0" : "PIX-DT295";
         w::DiscoveryDevice device{};
         device.device = static_cast<std::uint16_t>(devices.size());

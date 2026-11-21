@@ -82,7 +82,9 @@ int LIBUSB_CALL libusb_get_device_descriptor(libusb_device *device,
     const char *model = getenv("PIX_TEST_USB_FD_MODEL");
     if (model != NULL && strcmp(model, "invalid") == 0) return LIBUSB_ERROR_IO;
     desc->idVendor = model != NULL && strcmp(model, "wrong-vid") == 0 ? 0x1234 : 0x06b8;
-    desc->idProduct = index == 0U ? 0x102b : 0x103b;
+    const char *dt181_pid = getenv("PIX_TEST_USB_DT181_PID");
+    const bool dt181_102a = dt181_pid != NULL && strcmp(dt181_pid, "102a") == 0;
+    desc->idProduct = index == 0U ? (dt181_102a ? 0x102a : 0x102b) : 0x103b;
     desc->iSerialNumber = 1U;
     return 0;
 }

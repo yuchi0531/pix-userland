@@ -41,8 +41,9 @@ SIGINT/SIGTERM take the same cleanup path once the device is open. The USB fd
 provided by Android remains owned by the caller.
 
 Future models must get their own verified USB IDs, firmware, power and tuner
-profiles. DT141/195/295 are not claimed to work. The current backend only opens
-06b8:102b; the name `pix-userland` is not a blanket compatibility claim.
+profiles. DT141/195/295 are not claimed to work. The current DT181 backend opens
+06b8:102a and 06b8:102b; the name `pix-userland` is not a blanket compatibility
+claim.
 
 Windows uses libusb's WinUSB backend and native Win32 synchronization. Its CI build and unit tests do not certify USB reception. WebUSB remains unimplemented and needs an asynchronous browser adapter.
 

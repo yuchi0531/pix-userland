@@ -15,12 +15,13 @@ static void output(const usb_device_info *devices, size_t count, int json, char 
 int main(int argc, char **argv) {
     (void)argv;
     usb_device_info devices[] = {{0, 1, 7, {2, 3}, 2, 0x102b, USB_SERIAL_ABSENT, {0}},
-                                 {1, 9, 42, {0}, 0, 0x103b, USB_SERIAL_ABSENT, {0}}};
+                                 {1, 9, 42, {0}, 0, 0x103b, USB_SERIAL_ABSENT, {0}},
+                                 {2, 2, 9, {4}, 1, 0x102a, USB_SERIAL_ABSENT, {0}}};
     devices[1].serial_state = USB_SERIAL_READABLE;
     strcpy(devices[1].serial, "Case-9");
     /* Allows an independent JSON parser to inspect synthetic output. */
     if (argc > 1)
-        return usb_listing_write(stdout, devices, 2, 1) ? 1 : 0;
+        return usb_listing_write(stdout, devices, 3, 1) ? 1 : 0;
     char text[4096];
     output(NULL, 0, 1, text, sizeof(text));
     assert(!strcmp(text, "{\"enclosures\":[],\"ungrouped_usb_devices\":[]}\n"));
@@ -34,14 +35,17 @@ int main(int argc, char **argv) {
         "receiver=0 device=1 local=0 system=ISDB-T/S lnb_15v_supported=false\n"));
     output(&legacy, 1, 1, text, sizeof(text));
     assert(strstr(text, "\"model\":\"PIX-DT181-PU0\",\"usb\":\"06b8:102b\""));
-    output(devices, 2, 0, text, sizeof(text));
+    output(devices, 3, 0, text, sizeof(text));
     assert(strstr(text, "model=PIX-DT181-PU0 usb=06b8:102b bus=1 address=7 port=1-2.3"));
+    assert(strstr(text, "model=PIX-DT181-PU0 usb=06b8:102a bus=2 address=9 port=2-4"));
     assert(strstr(text, "model=PIX-DT295 usb=06b8:103b bus=9 address=42 port=unknown"));
     assert(strstr(text, "system=ISDB-T/S lnb_15v_supported=false"));
     assert(strstr(text, "receiver=0 device=1 local=0 system=ISDB-T/S lnb_15v_supported=false"));
-    output(devices, 2, 1, text, sizeof(text));
+    output(devices, 3, 1, text, sizeof(text));
     assert(strstr(text, "\"port\":\"1-2.3\""));
     assert(strstr(text, "\"port\":null"));
+    assert(strstr(text, "\"usb\":\"06b8:102a\""));
+    assert(strstr(text, "\"index\":2,\"serial\":null,\"model\":\"PIX-DT181-PU0\",\"usb\":\"06b8:102a\""));
     assert(strstr(text, "\"index\":0,\"serial\":null,\"model\":\"PIX-DT181-PU0\""));
     assert(strstr(text, "\"serial_unique\":null"));
     assert(strstr(text, "\"serial\":\"Case-9\",\"model\":\"PIX-DT295\",\"usb\":\"06b8:103b\","

@@ -113,13 +113,15 @@ static int init(libusb_context **ctx, int fd) {
     usb_err(r, "libusb_init");
     return r;
 }
-static int model_state(libusb_device *d) {
+static int model_state(libusb_device *d, unsigned *product) {
     struct libusb_device_descriptor desc;
     int r = libusb_get_device_descriptor(d, &desc);
     if (r < 0)
         return r;
+    if (product)
+        *product = desc.idProduct;
     if (desc.idVendor != 0x06b8) return 0;
-    return desc.idProduct == 0x102b ? USB_MODEL_DT181 :
+    return desc.idProduct == 0x102a || desc.idProduct == 0x102b ? USB_MODEL_DT181 :
            desc.idProduct == 0x103b ? USB_MODEL_DT295 : 0;
 }
 /* Reads the descriptor serial without claiming an interface. A missing serial
@@ -150,11 +152,12 @@ static void read_serial(libusb_device *device, usb_device_info *out) {
     out->serial[length] = 0;
     out->serial_state = USB_SERIAL_READABLE;
 }
-static void device_info(libusb_device *device, unsigned index, int model, int serial,
-                        usb_device_info *out) {
+static void device_info(libusb_device *device, unsigned index, int model,
+                        unsigned product, int serial, usb_device_info *out) {
     memset(out, 0, sizeof(*out));
     out->index = index;
-    out->product = model == USB_MODEL_DT295 ? 0x103b : 0x102b;
+    out->product = (uint16_t)(product ? product
+                                      : model == USB_MODEL_DT295 ? 0x103b : 0x102b);
     out->bus = libusb_get_bus_number(device);
     out->address = libusb_get_device_address(device);
     int count = libusb_get_port_numbers(device, out->ports, sizeof(out->ports));
@@ -185,14 +188,15 @@ int usb_list_model(int json, int expected_model) {
     }
     unsigned count = 0;
     for (ssize_t i = 0; i < n; i++) {
-        int model = model_state(list[i]);
+        unsigned product = 0;
+        int model = model_state(list[i], &product);
         if (model < 0) {
             usb_err(model, "read USB descriptor");
             free(found); libusb_free_device_list(list, 1); libusb_exit(ctx);
             return open_failure(model);
         }
         if (model == expected_model) {
-            device_info(list[i], count, expected_model, 1, &found[count]);
+            device_info(list[i], count, expected_model, product, 1, &found[count]);
             count++;
         }
     }
@@ -241,7 +245,7 @@ int usb_open_model(usb_backend **result, const usb_selector *selector, int fd, i
 #endif
         if (open_usb_error(b, libusb_wrap_sys_device(b->ctx, device_fd, &b->handle), "wrap USB fd"))
             goto error;
-        r = model_state(libusb_get_device(b->handle));
+        r = model_state(libusb_get_device(b->handle), NULL);
         if (r < 0) {
             open_usb_error(b, r, "read USB descriptor");
             goto error;
@@ -275,7 +279,8 @@ int usb_open_model(usb_backend **result, const usb_selector *selector, int fd, i
             }
         }
         for (ssize_t i = 0; i < n; i++) {
-            int model = model_state(list[i]);
+            unsigned product = 0;
+            int model = model_state(list[i], &product);
             if (model < 0) {
                 if (!scan_error)
                     scan_error = open_failure(model);
@@ -283,7 +288,7 @@ int usb_open_model(usb_backend **result, const usb_selector *selector, int fd, i
             }
             if (model == expected_model) {
                 usb_device_info info;
-                device_info(list[i], index++, expected_model,
+                device_info(list[i], index++, expected_model, product,
                             selector->kind == USB_SELECT_SERIAL, &info);
                 int match = selector->kind == USB_SELECT_SERIAL
                                 ? usb_selector_matches_serial(selector, info.serial_state,

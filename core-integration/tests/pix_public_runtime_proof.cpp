@@ -415,8 +415,25 @@ int main()
     const std::string list_text(list_json.begin(), list_json.end());
     if (list_text.find("\"model\":\"PIX-DT295\"") == std::string::npos ||
         list_text.find("\"usb\":\"06b8:103b\"") == std::string::npos ||
+        list_text.find("\"usb\":\"06b8:102b\"") == std::string::npos ||
         list_text.find("\"serial\":\"PIXDT29501\"") == std::string::npos ||
         list_text.find("\"systems\":[\"ISDB-T\",\"ISDB-S\"]") == std::string::npos) return 24;
+    /* The same DT181 enclosure may report 06b8:102a; discovery keeps the
+     * descriptor PID instead of normalizing it to the model default. */
+    if (!::setenv("PIX_TEST_USB_DT181_PID", "102a", 1)) {
+        const std::string alias_log = root + "/list-json-102a.log";
+        const pid_t alias_process = launch(PIXD_PATH, {"--list-json"}, alias_log);
+        int alias_status = 0;
+        if (alias_process <= 0 ||
+            ::waitpid(alias_process, &alias_status, 0) != alias_process ||
+            !WIFEXITED(alias_status) || WEXITSTATUS(alias_status) != 0) return 33;
+        const auto alias_json = read_file(alias_log);
+        const std::string alias_text(alias_json.begin(), alias_json.end());
+        (void)::unsetenv("PIX_TEST_USB_DT181_PID");
+        if (alias_text.find("\"model\":\"PIX-DT181-PU0\"") == std::string::npos ||
+            alias_text.find("\"usb\":\"06b8:102a\"") == std::string::npos ||
+            alias_text.find("\"usb\":\"06b8:102b\"") != std::string::npos) return 34;
+    }
     const pid_t ts_version = launch(PIXTS_PATH, {"--version"}, ts_version_log);
     int ts_version_status = 0;
     if (ts_version <= 0 || ::waitpid(ts_version, &ts_version_status, 0) != ts_version ||
@@ -457,6 +474,10 @@ int main()
         !WIFEXITED(missing_group_root_status) ||
         WEXITSTATUS(missing_group_root_status) != 2) return 34;
     if (::chmod(root.c_str(), 0750) != 0) return 34;
+
+    /* Exercise the 06b8:102a variant end to end from here on: locate(),
+     * build_list() and pixctl's serial match all see the alias PID. */
+    if (::setenv("PIX_TEST_USB_DT181_PID", "102a", 1) != 0) return 35;
 
     const pid_t daemon = launch(PIXD_PATH,
         {"--device", "serial:PIXDT18101", "--firmware", firmware_path,

@@ -12,10 +12,10 @@
 
 | 機種 | USB ID | 対応放送波 | 受信部 | 状況と検証範囲 |
 |---|---|---|---|---|
-| CaptyTV Hi-Vision PIX-DT181-PU0 | `06b8:102b` | 地上デジタル、BS デジタル、110 度 CS デジタル | 1 系統（排他受信） | 実機検証済み（地上・BS・110度CS）。同時受信は 1 ストリームのみ。 |
+| CaptyTV Hi-Vision PIX-DT181-PU0 | `06b8:102a` / `06b8:102b` | 地上デジタル、BS デジタル、110 度 CS デジタル | 1 系統（排他受信） | 実機検証済み（地上・BS・110度CS）。同時受信は 1 ストリームのみ。 |
 | PIX-DT295 | `06b8:103b` | 地上デジタル、BS デジタル、110 度 CS デジタル | 1 系統（排他受信） | プロファイルおよび stream バックエンド対応。OS 別の検証範囲や制約は [DT295 の状況](docs/dt295.md) を参照。 |
 
-- **PIX-DT181-PU0**: 実機検証済みの主対象モデルです。地上波端子と BS/CS 端子を備え、1 系統の受信部で地上・BS・110度CSのいずれかを受信できます（同時受信は 1 ストリームのみ）。
+- **PIX-DT181-PU0**: 実機検証済みの主対象モデルです。地上波端子と BS/CS 端子を備え、1 系統の受信部で地上・BS・110度CSのいずれかを受信できます（同時受信は 1 ストリームのみ）。USB ID は個体により `06b8:102a` と `06b8:102b` の2種類があり、どちらも同じ機種として扱います（`06b8:102a` 個体で BS/CS の TS 受信を確認済み）。
 - **PIX-DT295**: プロファイルおよび stream バックエンド（Linux, macOS, Windows）に対応しています。実機での長時間検証範囲や動的 PMT 追従などの制約事項については [DT295 の状況](docs/dt295.md) を参照してください。
 - その他の CaptyTV や StationTV シリーズ（PIX-DT141、PIX-DT195 など）は未対応・未検証です。
 
@@ -86,6 +86,7 @@ Linux で一般ユーザーが USB チューナーにアクセスするには、
 `/etc/udev/rules.d/70-pix-userland.rules` を作成し、以下のルールを記述します（`packaging/70-pix-userland.rules` に同等のファイルを用意しています）。
 
 ```udev
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="06b8", ATTR{idProduct}=="102a", MODE="0660", GROUP="video"
 SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="06b8", ATTR{idProduct}=="102b", MODE="0660", GROUP="video"
 SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="06b8", ATTR{idProduct}=="103b", MODE="0660", GROUP="video"
 ```

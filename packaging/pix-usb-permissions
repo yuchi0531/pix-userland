@@ -7,7 +7,8 @@ dev=${PIX_DEV_ROOT:-/dev}
 for entry in "$sys"/bus/usb/devices/*; do
     [ -r "$entry/idVendor" ] && [ -r "$entry/idProduct" ] || continue
     [ "$(cat "$entry/idVendor")" = 06b8 ] || continue
-    [ "$(cat "$entry/idProduct")" = 102b ] || continue
+    product=$(cat "$entry/idProduct")
+    case "$product" in 102a|102b) ;; *) continue ;; esac
     bus=$(cat "$entry/busnum")
     addr=$(cat "$entry/devnum")
     case "$bus:$addr" in *[!0-9:]*|:*|*:) continue;; esac

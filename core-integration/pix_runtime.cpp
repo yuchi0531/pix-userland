@@ -455,6 +455,11 @@ bool same_serial(const dtv::userland::identity::SerialText& left,
            std::memcmp(left.bytes.data(), right.bytes.data(), left.length) == 0;
 }
 
+bool dt181_pid(std::uint16_t product) noexcept
+{
+    return product == 0x102aU || product == 0x102bU;
+}
+
 bool read_serial_text(libusb_device* device,
                       const libusb_device_descriptor& descriptor,
                       dtv::userland::identity::SerialText& output) noexcept
@@ -540,7 +545,7 @@ dtv::userland::Result<LocatedDevice> locate(const std::string& input) noexcept
             continue;
         if (descriptor.idVendor != 0x06b8U) continue;
         Model model;
-        if (descriptor.idProduct == 0x102bU) model = Model::dt181;
+        if (dt181_pid(descriptor.idProduct)) model = Model::dt181;
         else if (descriptor.idProduct == 0x103bU) model = Model::dt295;
         else continue;
 
@@ -561,6 +566,7 @@ dtv::userland::Result<LocatedDevice> locate(const std::string& input) noexcept
             selected.serial_present = true;
             selected.serial_unique = true;
             selected.serial_uniqueness_known = true;
+            selected.pid = descriptor.idProduct;
             found = true;
             continue;
         }
@@ -568,6 +574,7 @@ dtv::userland::Result<LocatedDevice> locate(const std::string& input) noexcept
         if (found) continue;
 
         LocatedDevice candidate{};
+        candidate.pid = descriptor.idProduct;
         std::uint8_t ports[USB_SELECTOR_MAX_PORTS]{};
         const int port_count = libusb_get_port_numbers(devices[index], ports,
                                                        sizeof(ports));
@@ -679,9 +686,10 @@ dtv::userland::Result<LocatedDevice> locate_fd(
     }
     bool matches = failure != Error::INVALID_ARGUMENT &&
         descriptor.idVendor == 0x06b8U &&
-        (descriptor.idProduct == 0x102bU || descriptor.idProduct == 0x103bU);
+        (dt181_pid(descriptor.idProduct) || descriptor.idProduct == 0x103bU);
     if (matches) {
-        selected.model = descriptor.idProduct == 0x102bU ? Model::dt181 : Model::dt295;
+        selected.model = dt181_pid(descriptor.idProduct) ? Model::dt181 : Model::dt295;
+        selected.pid = descriptor.idProduct;
         const unsigned bus = libusb_get_bus_number(device);
         std::uint8_t ports[USB_SELECTOR_MAX_PORTS]{};
         const int port_count = libusb_get_port_numbers(device, ports, sizeof(ports));
@@ -1088,7 +1096,8 @@ Result<void> build_list(const LocatedDevice& device, const std::string& version,
     UsbFunction& function = list.functions.items[0];
     function.id = 0U;
     function.vid = 0x06b8U;
-    function.pid = dt295 ? 0x103bU : 0x102bU;
+    function.pid = device.pid != 0U ? device.pid
+                                    : (dt295 ? 0x103bU : 0x102bU);
     function.mode = Mode::runtime;
     if (!set_string(function.model.value.name, model_id))
         return Result<void>::failure(Error::INTERNAL);
